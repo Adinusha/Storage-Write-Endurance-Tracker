@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ card.brand }} {{ card.model }}{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{% url 'sdcard_delete' card.pk %}" class="btn btn-danger">Remove card</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats row -->
+<div class="grid-3" style="margin-bottom:1.25rem;">
+  <div class="stat">
+    <div class="stat-label">Health used</div>
+    <div class="stat-value" style="color:{% if card.health_percent >= 95 %}#ef4444{% elif card.health_percent >= 80 %}#f59e0b{% else %}#22c55e{% endif %}">
+      {{ card.health_percent|floatformat:1 }}%
+    </div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Total written</div>
+    <div class="stat-value" style="font-size:1.2rem;">
+      {{ card.total_written_bytes|filesizeformat }}
+    </div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Est. days remaining</div>
+    <div class="stat-value" style="font-size:1.2rem;">
+      {% if card.estimated_lifespan_days %}{{ card.estimated_lifespan_days }}{% else %}—{% endif %}
+    </div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Theoretical lifespan</div>
+    <div class="stat-value" style="font-size:1.2rem;">
+      {{ card.theoretical_lifespan_gb|floatformat:1 }} GB
+    </div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">P/E cycles</div>
+    <div class="stat-value" style="font-size:1.2rem;">{{ card.pe_cycles }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Write amplification</div>
+    <div class="stat-value" style="font-size:1.2rem;">{{ card.write_amplification_factor }}×</div>
+  </div>
+</div>
+
+<!-- Weather card -->
+{% if weather %}
+<div class="card" style="margin-bottom:1.25rem; border-left:4px solid {% if weather.temp_warning or weather.humidity_warning %}#ef4444{% else %}#22c55e{% endif %};">
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+    <div>
+      <div class="card-title" style="margin-bottom:.25rem;">
+        🌡 Environmental conditions — {{ card.device.location|default:card.device.name }}
+      </div>
+      <div style="font-size:.8rem; color:#6b7280;">
+        Live data from Open-Meteo · {{ weather.description }}
+      </div>
+    </div>
+    <div style="display:flex; gap:1.5rem;">
+      <div style="text-align:center;">
+        <div style="font-size:1.6rem; font-weight:600; color:{% if weather.temp_warning %}#ef4444{% else %}#1a1a1a{% endif %};">
+          {{ weather.temperature }}°C
+        </div>
+        <div style="font-size:.75rem; color:#6b7280;">Temperature</div>
+        {% if weather.temp_warning %}
+          <div style="font-size:.7rem; color:#ef4444; font-weight:500;">⚠ Too hot for SD card</div>
+        {% endif %}
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:1.6rem; font-weight:600; color:{% if weather.humidity_warning %}#f59e0b{% else %}#1a1a1a{% endif %};">
+          {{ weather.humidity }}%
+        </div>
+        <div style="font-size:.75rem; color:#6b7280;">Humidity</div>
+        {% if weather.humidity_warning %}
+          <div style="font-size:.7rem; color:#f59e0b; font-weight:500;">⚠ High humidity risk</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% if weather.temp_warning or weather.humidity_warning %}
+  <div style="margin-top:.75rem; padding:.6rem .85rem; background:#fef2f2; border-radius:6px; font-size:.82rem; color:#991b1b;">
+    ⚠ Adverse environmental conditions detected. High temperature or humidity accelerates
+    flash memory degradation and may shorten the card's actual lifespan below the theoretical estimate.
+  </div>
+  {% endif %}
+</div>
+{% else %}
+<div class="card" style="margin-bottom:1.25rem; background:#f9fafb;">
+  <div style="font-size:.85rem; color:#9ca3af; display:flex; align-items:center; gap:.5rem;">
+    🌡 No weather data —
+    <a href="{% url 'device_detail' card.device.pk %}">add GPS coordinates to this device</a>
+    to enable environmental monitoring.
+  </div>
+</div>
+{% endif %}
+
+<!-- Health bar -->
+<div class="card" style="margin-bottom:1.25rem;">
+  <div class="card-title">Endurance status</div>
+  <div style="display:flex; justify-content:space-between; font-size:.8rem; color:#6b7280; margin-bottom:.4rem;">
+    <span>0%</span>
+    <span>
+      Formula: ({{ card.capacity_gb }} GB × {{ card.pe_cycles }} P/E) ÷ {{ card.write_amplification_factor }} WAF
+      = {{ card.theoretical_lifespan_gb|floatformat:1 }} GB lifespan
+    </span>
+    <span>100%</span>
+  </div>
+  <div class="health-bar-wrap" style="height:14px;">
+    <div class="health-bar
+      {% if card.health_percent >= 95 %}health-critical
+      {% elif card.health_percent >= 80 %}health-warn
+      {% else %}health-ok{% endif %}"
+      style="width:{{ card.health_percent }}%">
+    </div>
+  </div>
+  <div style="display:flex; flex-wrap:wrap; gap:1.5rem; margin-top:.75rem; font-size:.8rem; color:#6b7280;">
+    <span>Brand: <strong>{{ card.brand }}</strong></span>
+    <span>Model: <strong>{{ card.model }}</strong></span>
+    <span>Capacity: <strong>{{ card.capacity_gb }} GB</strong></span>
+    <span>TBW limit: <strong>{{ card.tbw_limit_tb }} TB</strong></span>
+    <span>Installed: <strong>{{ card.installed_at|date:"Y-m-d" }}</strong></span>
+    <span>Device: <strong><a href="{% url 'device_detail' card.device.pk %}">{{ card.device.name }}</a></strong></span>
+  </div>
+</div>
+
+<!-- Write history chart -->
+<div class="card" style="margin-bottom:1.25rem;">
+  <div class="card-title">Write history</div>
+  {% if chart_labels %}
+    <canvas id="writeChart" height="80"></canvas>
+    <script>
+      new Chart(document.getElementById('writeChart'), {
+        type: 'line',
+        data: {
+          labels: {{ chart_labels|safe }},
+          datasets: [{
+            label: 'Bytes written',
+            data: {{ chart_data|safe }},
+            borderColor: '#7c3aed',
+            backgroundColor: 'rgba(124,58,237,.08)',
+            borderWidth: 2,
+            pointRadius: 3,
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: v =>
+                  v >= 1e9 ? (v/1e9).toFixed(1) + ' GB' :
+                  v >= 1e6 ? (v/1e6).toFixed(1) + ' MB' :
+                  v >= 1e3 ? (v/1e3).toFixed(1) + ' KB' : v + ' B'
+              }
+            },
+            x: { ticks: { maxTicksLimit: 10 } }
+          }
+        }
+      });
+    </script>
+  {% else %}
+    <p class="empty">No write events yet. Send a POST to <code>/api/write-event/</code> to start tracking.</p>
+  {% endif %}
+</div>
+
+<!-- Alert history -->
+<div class="card">
+  <div class="card-title">Alert history</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Level</th>
+        <th>Message</th>
+        <th>Triggered</th>
+        <th>Acknowledged</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for alert in card.alerts.all %}
+      <tr class="alert-row-{{ alert.level }}">
+        <td>
+          {% if alert.level == 'critical' %}
+            <span class="badge badge-critical">Critical</span>
+          {% else %}
+            <span class="badge badge-warn">Warning</span>
+          {% endif %}
+        </td>
+        <td style="font-size:.85rem;">{{ alert.message }}</td>
+        <td style="font-size:.8rem; color:#6b7280;">{{ alert.triggered_at|date:"Y-m-d H:i" }}</td>
+        <td>{% if alert.acknowledged %}✅{% else %}—{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" class="empty">No alerts for this card.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

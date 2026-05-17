@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block page_title %}Alerts{% endblock %}
+
+{% block content %}
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Level</th>
+        <th>Device</th>
+        <th>SD card</th>
+        <th>Message</th>
+        <th>Triggered</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for alert in alerts %}
+      <tr class="alert-row-{{ alert.level }}">
+        <td>
+          {% if alert.level == 'critical' %}<span class="badge badge-critical">Critical</span>
+          {% else %}<span class="badge badge-warn">Warning</span>{% endif %}
+        </td>
+        <td><a href="{% url 'device_detail' alert.sdcard.device.pk %}">{{ alert.sdcard.device.name }}</a></td>
+        <td><a href="{% url 'sdcard_detail' alert.sdcard.pk %}">{{ alert.sdcard.brand }} {{ alert.sdcard.model }}</a></td>
+        <td style="font-size:.85rem;">{{ alert.message }}</td>
+        <td style="font-size:.8rem; color:#6b7280;">{{ alert.triggered_at|date:"Y-m-d H:i" }}</td>
+        <td>
+          <form method="post" action="{% url 'acknowledge_alert' alert.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secondary" style="font-size:.8rem;">Acknowledge</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" class="empty">
+          <p style="font-size:1.5rem; margin-bottom:.4rem;">✅</p>
+          No open alerts — all cards are healthy.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

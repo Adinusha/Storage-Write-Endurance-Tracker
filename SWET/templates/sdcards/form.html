@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block page_title %}Add SD card{% endblock %}
+
+{% block content %}
+<div class="card form-max">
+  <div class="card-title">Add SD card to {{ device.name }}</div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label>Brand</label>
+      <input type="text" name="brand" placeholder="e.g. Samsung" required>
+    </div>
+    <div class="form-group">
+      <label>Model</label>
+      <input type="text" name="model" placeholder="e.g. EVO Plus" required>
+    </div>
+    <div class="form-group">
+      <label>Capacity (GB)</label>
+      <input type="number" name="capacity_gb" min="1" placeholder="e.g. 64" required>
+    </div>
+    <div class="form-group">
+      <label>TBW limit (TB)</label>
+      <input type="number" name="tbw_limit_tb" step="0.01" min="0.01" placeholder="e.g. 30" required>
+    </div>
+    <div class="form-group">
+      <label>P/E cycles</label>
+      <input type="number" name="pe_cycles" value="3000" min="100" required>
+      <small style="color:#6b7280; font-size:.75rem; display:block; margin-top:.25rem;">
+        SLC ≈ 100,000 · MLC ≈ 3,000 · TLC ≈ 1,000
+      </small>
+    </div>
+    <div class="form-group">
+      <label>Write amplification factor</label>
+      <input type="number" name="write_amplification_factor" value="1.5" step="0.1" min="1.0" required>
+      <small style="color:#6b7280; font-size:.75rem; display:block; margin-top:.25rem;">
+        Typically between 1.0 and 3.0
+      </small>
+    </div>
+    <div class="form-group">
+      <label>Installed at</label>
+      <input type="datetime-local" name="installed_at" required>
+    </div>
+    <div style="display:flex; gap:.75rem; margin-top:1.5rem;">
+      <button type="submit" class="btn btn-primary">Save card</button>
+      <a href="{% url 'device_detail' device.pk %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

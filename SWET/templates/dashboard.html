@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — SWET{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{% url 'device_create' %}" class="btn btn-primary">+ Add device</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- Summary stats -->
+<div class="grid-3" style="margin-bottom: 1.5rem;">
+  <div class="stat">
+    <div class="stat-label">Total devices</div>
+    <div class="stat-value">{{ devices|length }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Total SD cards</div>
+    <div class="stat-value">
+      {% with total=0 %}
+        {% for device in devices %}
+          {% for card in device.sdcards.all %}{% endfor %}
+        {% endfor %}
+        {{ devices|length }}
+      {% endwith %}
+      {% comment %}Use a counter tag below{% endcomment %}
+      {% regroup devices by pk as grouped %}
+      
+    </div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Open alerts</div>
+    <div class="stat-value" style="color: {% if open_alert_count %}#ef4444{% else %}#22c55e{% endif %}">
+      {{ open_alert_count }}
+    </div>
+  </div>
+</div>
+
+<!-- Devices + their cards -->
+{% for device in devices %}
+<div class="card" style="margin-bottom: 1.25rem;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem;">
+    <div>
+      <div class="card-title" style="margin:0">{{ device.name }}</div>
+      <div style="font-size:.8rem; color:#6b7280;">{{ device.serial_number }}{% if device.location %} · {{ device.location }}{% endif %}</div>
+    </div>
+    <a href="{% url 'device_detail' device.pk %}" class="btn btn-secondary">View</a>
+  </div>
+
+  {% if device.sdcards.all %}
+    <table>
+      <thead>
+        <tr>
+          <th>Card</th>
+          <th>Capacity</th>
+          <th>TBW limit</th>
+          <th>Health</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for card in device.sdcards.all %}
+        {% with h=card.health_percent %}
+        <tr>
+          <td>{{ card.brand }} {{ card.model }}</td>
+          <td>{{ card.capacity_gb }} GB</td>
+          <td>{{ card.tbw_limit_tb }} TB</td>
+          <td style="min-width:140px;">
+            <div style="font-size:.8rem; margin-bottom:2px;">{{ h|floatformat:1 }}%</div>
+            <div class="health-bar-wrap">
+              <div class="health-bar {% if h >= 95 %}health-critical{% elif h >= 80 %}health-warn{% else %}health-ok{% endif %}"
+                   style="width:{{ h }}%"></div>
+            </div>
+          </td>
+          <td>
+            {% if h >= 95 %}
+              <span class="badge badge-critical">Critical</span>
+            {% elif h >= 80 %}
+              <span class="badge badge-warn">Warning</span>
+            {% else %}
+              <span class="badge badge-ok">Healthy</span>
+            {% endif %}
+          </td>
+          <td><a href="{% url 'sdcard_detail' card.pk %}" class="btn btn-secondary">Detail</a></td>
+        </tr>
+        {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="font-size:.875rem; color:#9ca3af;">No SD cards registered yet.
+      <a href="{% url 'sdcard_create' device.pk %}">Add one →</a>
+    </p>
+  {% endif %}
+</div>
+{% empty %}
+  <div class="empty">
+    <p style="font-size:2rem; margin-bottom:.5rem;">📭</p>
+    <p>No devices yet. <a href="{% url 'device_create' %}">Add your first device</a>.</p>
+  </div>
+{% endfor %}
+
+{% endblock %}

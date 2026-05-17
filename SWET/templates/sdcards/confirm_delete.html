@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block page_title %}Remove SD card{% endblock %}
+
+{% block content %}
+<div class="card form-max">
+  <div class="card-title" style="color:#dc2626;">Remove "{{ card.brand }} {{ card.model }}"?</div>
+  <p style="font-size:.9rem; color:#4b5563; margin-bottom:1.5rem;">
+    All write events and alerts linked to this card will be deleted. This cannot be undone.
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <div style="display:flex; gap:.75rem;">
+      <button type="submit" class="btn btn-danger">Yes, remove</button>
+      <a href="{% url 'device_detail' card.device.pk %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

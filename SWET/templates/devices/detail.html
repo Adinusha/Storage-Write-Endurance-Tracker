@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ device.name }}{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{% url 'sdcard_create' device.pk %}" class="btn btn-primary">+ Add SD card</a>
+  <a href="{% url 'device_delete' device.pk %}" class="btn btn-danger">Delete device</a>
+{% endblock %}
+
+{% block content %}
+
+
+<div class="card" style="margin-bottom:1.25rem;">
+  <div class="card-title">Device info</div>
+  <table>
+    <tr><td style="color:#6b7280; width:160px;">Serial number</td><td style="font-family:monospace;">{{ device.serial_number }}</td></tr>
+    <tr><td style="color:#6b7280;">Location</td><td>{{ device.location|default:"—" }}</td></tr>
+    <tr><td style="color:#6b7280;">Added</td><td>{{ device.created_at|date:"Y-m-d H:i" }}</td></tr>
+  </table>
+</div>
+
+<!-- SD Cards -->
+<div class="card">
+  <div class="card-title">SD cards</div>
+  {% for card in device.sdcards.all %}
+  {% with h=card.health_percent %}
+  <div style="padding:.75rem 0; border-bottom:1px solid #f3f4f6; display:flex; align-items:center; gap:1rem;">
+    <div style="flex:1;">
+      <div style="font-weight:500; margin-bottom:.2rem;">
+        <a href="{% url 'sdcard_detail' card.pk %}">{{ card.brand }} {{ card.model }}</a>
+      </div>
+      <div style="font-size:.8rem; color:#6b7280;">{{ card.capacity_gb }} GB · TBW limit: {{ card.tbw_limit_tb }} TB · Installed: {{ card.installed_at|date:"Y-m-d" }}</div>
+    </div>
+    <div style="min-width:180px;">
+      <div style="font-size:.8rem; margin-bottom:2px;">{{ h|floatformat:1 }}% used</div>
+      <div class="health-bar-wrap">
+        <div class="health-bar {% if h >= 95 %}health-critical{% elif h >= 80 %}health-warn{% else %}health-ok{% endif %}"
+             style="width:{{ h }}%"></div>
+      </div>
+    </div>
+    <div>
+      {% if h >= 95 %}<span class="badge badge-critical">Critical</span>
+      {% elif h >= 80 %}<span class="badge badge-warn">Warning</span>
+      {% else %}<span class="badge badge-ok">Healthy</span>{% endif %}
+    </div>
+    <a href="{% url 'sdcard_delete' card.pk %}" class="btn btn-danger" style="font-size:.8rem;">Remove</a>
+  </div>
+  {% endwith %}
+  {% empty %}
+  <p class="empty">No SD cards. <a href="{% url 'sdcard_create' device.pk %}">Add one →</a></p>
+  {% endfor %}
+</div>
+
+{% endblock %}
